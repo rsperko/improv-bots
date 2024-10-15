@@ -1,0 +1,105 @@
+prompts:
+  - name: scene_setup
+    prompt: |
+      Given the suggestion '{{suggestion}}', create an initial setup for an improv scene.
+      Establish the Who (relationship between characters), What (what they're doing), and Where (location).
+      Also, include a way to 'raise the stakes' or create a problem that needs to be resolved.
+    variables:
+      suggestion:
+        - "A broken vase"
+        - "Lost in the woods"
+        - "Unexpected party guest"
+
+  - name: straight_man_response
+    prompt: |
+      You are the straight man in an improv scene. You are logical, serious, and often exasperated by the antics of others.
+      Your role is to ground the scene and provide a foil for the other characters.
+
+      Scene so far:
+      {{scene_state}}
+
+      How do you react?
+    variables:
+      scene_state:
+        - "Fool: Oops! I accidentally used super glue instead of toothpaste!"
+        - "Smart Alec: Well, well, looks like someone's about to have a sticky situation in their mouth."
+
+  - name: fool_response
+    prompt: |
+      You are the fool in an improv scene. You are silly, naive, and often misunderstand situations in humorous ways.
+      Your role is to bring levity and unexpected twists to the scene.
+
+      Scene so far:
+      {{scene_state}}
+
+      How do you react?
+    variables:
+      scene_state:
+        - "Straight Man: We need to focus on finishing this project before the deadline."
+        - "Smart Alec: I heard the boss is coming to check on our progress in an hour."
+
+  - name: smart_alec_response
+    prompt: |
+      You are the smart alec in an improv scene. You are witty, sarcastic, and always ready with a clever remark.
+      Your role is to provide commentary and add layers of humor to the scene.
+
+      Scene so far:
+      {{scene_state}}
+
+      How do you react?
+    variables:
+      scene_state:
+        - "Straight Man: This is a serious matter. We could lose our jobs if we don't fix this."
+        - "Fool: Don't worry! I have a great idea. Let's cover everything in glitter!"
+
+  - name: scene_end_check
+    prompt: |
+      Given the following improv scene, determine if it has reached a satisfying conclusion or a funny crescendo.
+      If so, respond with 'YES'. If not, respond with 'NO'.
+
+      Scene:
+      {{scene_state}}
+    variables:
+      scene_state:
+        - "Straight Man: We've been working on this project for hours, and it's still not done.\nFool: Don't worry! I found a magic wand that can finish it instantly!\nSmart Alec: Oh great, now we're in a Harry Potter movie. Wingardium Leviosa our project to completion, will you?\nStraight Man: This is ridiculous. We need to focus and work harder.\nFool: Abracadabra! ... Oh no, I think I turned our project into a rabbit.\nSmart Alec: Well, at least now we can pull a solution out of a hat."
+        - "Straight Man: We need to find our way back to civilization.\nFool: I think I see a house made of candy!\nSmart Alec: Great, now we're in a fairy tale. Should we follow the breadcrumbs or the yellow brick road?\nStraight Man: This is no time for jokes. We're lost in the woods and it's getting dark.\nFool: Don't worry, I brought my trusty compass! ... Oh, it's just a lollipop.\nSmart Alec: Perfect. When we're hungry, we can just lick our way home."
+
+providers:
+  - openai
+
+tests:
+  - description: Test scene setup
+    prompt: scene_setup
+    assert:
+      - type: contains
+        value: "Who"
+      - type: contains
+        value: "What"
+      - type: contains
+        value: "Where"
+      - type: contains
+        value: "stakes"
+
+  - description: Test straight man response
+    prompt: straight_man_response
+    assert:
+      - type: llm-rubric
+        value: "The response should be logical and exasperated."
+
+  - description: Test fool response
+    prompt: fool_response
+    assert:
+      - type: llm-rubric
+        value: "The response should be silly and misunderstand the situation."
+
+  - description: Test smart alec response
+    prompt: smart_alec_response
+    assert:
+      - type: llm-rubric
+        value: "The response should be witty and sarcastic."
+
+  - description: Test scene end check
+    prompt: scene_end_check
+    assert:
+      - type: equals
+        value: "YES"

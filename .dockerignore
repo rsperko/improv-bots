@@ -1,0 +1,27 @@
+# Ignore everything
+*
+
+# Allow specific directories
+!backend/
+!frontend/
+
+# Ignore unnecessary files in allowed directories
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+frontend/node_modules/
+frontend/build/
+frontend/.env*
+
+# Git related
+.git
+.gitignore
+
+# IDE specific files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
