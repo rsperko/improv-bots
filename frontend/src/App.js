@@ -15,7 +15,6 @@ function App() {
       body: JSON.stringify({ text: suggestion }),
     });
     const data = await response.json();
-    console.log('Start scene data:', data);
     setSceneState(data.scene_state);
     setIsSceneStarted(true);
   };
@@ -23,7 +22,6 @@ function App() {
   const nextTurn = async () => {
     const response = await fetch('http://localhost:8000/next_turn');
     const data = await response.json();
-    console.log('Next turn data:', data);
     setSceneState(data.scene_state);
     if (data.scene_over) {
       setIsSceneStarted(false);
@@ -41,6 +39,11 @@ function App() {
         return <p key={index}>{line}</p>;
       }
     });
+  };
+
+  const getCharacterColor = (index) => {
+    const colors = ['#e6f3ff', '#fff0e6', '#e6ffe6'];
+    return colors[index % colors.length];
   };
 
   return (
@@ -68,8 +71,7 @@ function App() {
           <p><strong>Problem:</strong> {sceneState.problem}</p>
           <h3>Actions:</h3>
           {sceneState.actions && sceneState.actions.map((turn, index) => (
-            <div key={index} className={`turn ${turn.agent.toLowerCase().replace(' ', '-')}`}>
-              <h4>{turn.agent}</h4>
+            <div key={index} style={{backgroundColor: getCharacterColor(turn.agent_id), padding: '10px', margin: '10px 0', borderRadius: '5px'}}>
               {formatAction(turn.action)}
             </div>
           ))}

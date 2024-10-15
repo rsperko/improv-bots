@@ -1,12 +1,11 @@
-from agents.straight_man import StraightMan
-from agents.fool import Fool
-from agents.smart_alec import SmartAlec
 from utils.openai_client import get_completion
+from .agent import Agent
+import yaml
 import json
 
 class SceneManager:
     def __init__(self):
-        self.agents = [StraightMan(), Fool(), SmartAlec()]
+        self.agents = self._load_agents_from_yaml()
         self.scene_state = {
             "suggestion": "",
             "who": "",
@@ -16,7 +15,6 @@ class SceneManager:
             "actions": []
         }
         self.current_agent_index = 0
-        self.character_names = []
 
     def start_scene(self, suggestion):
         prompt = f"""Given the suggestion '{suggestion}', create an initial setup for an improv scene.
@@ -34,25 +32,26 @@ class SceneManager:
 
         try:
             setup_data = json.loads(initial_setup)
-            self.character_names = setup_data["character_names"]
+            # loop through agents and set their names
+            for agent in self.agents:
+                agent.character_name = setup_data["character_names"].pop(0)
             self.scene_state = {
                 "suggestion": suggestion,
                 "who": setup_data["who"],
                 "what": setup_data["what"],
                 "where": setup_data["where"],
                 "problem": setup_data["problem"],
-                "actions": [{"agent": self.character_names[0], "action": setup_data["initial_action"]}]
+                "actions": [{"agent_id": self.current_agent_index, "agent": self._current_agent().character_name, "action": setup_data["initial_action"]}]
             }
         except json.JSONDecodeError:
             # Fallback in case the AI doesn't return valid JSON
-            self.character_names = ["Character 1", "Character 2", "Character 3"]
             self.scene_state = {
                 "suggestion": suggestion,
                 "who": "Unknown",
                 "what": "Unknown",
                 "where": "Unknown",
                 "problem": "Unknown",
-                "actions": [{"agent": self.character_names[0], "action": initial_setup}]
+                "actions": [{"agent_id": self.current_agent_index, "agent": self._current_agent().character_name, "action": initial_setup}]
             }
 
         return self.scene_state
@@ -61,11 +60,13 @@ class SceneManager:
         if self.is_scene_over():
             return {"scene_state": self.scene_state, "scene_over": True}
 
-        current_agent = self.agents[self.current_agent_index]
-        action = current_agent.ooda_loop(self._get_scene_context())
+        current_agent = self._current_agent()
+
+        action = current_agent.ooda_loop(current_agent.character_name, self._get_scene_context())
 
         self.scene_state["actions"].append({
-            "agent": self.character_names[self.current_agent_index],
+            "agent_id": self.current_agent_index,
+            "agent": current_agent.character_name,
             "action": action['action']
         })
         self.current_agent_index = (self.current_agent_index + 1) % len(self.agents)
@@ -76,6 +77,14 @@ class SceneManager:
         prompt = f"Given the following improv scene, determine if it has reached a satisfying conclusion or a funny crescendo. If so, respond with 'YES'. If not, respond with 'NO'.\n\nScene:\n{self._get_scene_context()}"
         response = get_completion(prompt)
         return response.strip().upper() == "YES"
+
+    def _current_agent(self):
+        return self.agents[self.current_agent_index]
+
+    def _load_agents_from_yaml(self):
+        with open('scene/agents.yaml', 'r') as file:
+            agent_data = yaml.safe_load(file)
+        return [Agent(**agent_info) for agent_info in agent_data]
 
     def _get_scene_context(self):
         context = f"Suggestion: {self.scene_state['suggestion']}\n"
