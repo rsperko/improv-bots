@@ -21,6 +21,7 @@ frontend/.env*
 # IDE specific files
 .vscode/
 .idea/
+project.json
 
 # OS generated files
 .DS_Store

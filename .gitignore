@@ -1,6 +1,9 @@
 # Python virtual environment
 backend/venv/
 
+# Frontend
+frontend/node_modules/
+
 # Python cache files
 __pycache__/
 *.pyc
@@ -11,3 +14,4 @@ __pycache__/
 # IDE specific files
 .vscode/
 .idea/
+project.json

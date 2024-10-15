@@ -1,1 +1,1 @@
-from .openai_client import OpenAIClient
+from .openai_client import get_completion
