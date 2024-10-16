@@ -1,1 +1,1 @@
-from .openai_client import get_completion
+from .language_model_client import get_completion, get_model_prompt

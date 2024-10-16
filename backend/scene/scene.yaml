@@ -1,0 +1,24 @@
+base_prompts: &base_prompts
+  start_scene: >
+    Given the suggestion '{suggestion}', create an initial setup for an improv scene.
+    Return a JSON object with the following structure:
+    {{
+        "who": "Describe the relationship between characters",
+        "what": "Describe what they are doing",
+        "where": "Describe the location",
+        "problem": "Describe the problem or how to raise the stakes",
+        "character_names": ["Name for Straight Man", "Name for Fool", "Name for Smart Alec"],
+        "initial_action": "Provide the first line of dialogue or action for the first character"
+    }}
+    without any formatting.
+  is_scene_over: >
+    Given the following improv scene, determine if it has reached a satisfying conclusion or a funny crescendo. If so, respond with 'YES'. If not, respond with 'NO'.
+
+    Scene:
+    {context}
+
+prompts:
+  gpt-3.5-turbo:
+    <<: *base_prompts
+  gpt-4o:
+    <<: *base_prompts

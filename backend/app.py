@@ -2,7 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from scene.scene_manager import SceneManager
+import os
+from dotenv import load_dotenv
+from config import setup_logging
 
+load_dotenv()
+
+setup_logging(os.getenv("ENVIRONMENT", "dev"))
 app = FastAPI()
 
 app.add_middleware(

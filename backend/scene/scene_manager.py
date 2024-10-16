@@ -1,11 +1,13 @@
-from utils.openai_client import get_completion
+from utils import get_completion
 from .agent import Agent
 import yaml
 import json
+import random
 
 class SceneManager:
     def __init__(self):
         self.agents = self._load_agents_from_yaml()
+        self.prompts = self._load_prompts_from_yaml()
         self.scene_state = {
             "suggestion": "",
             "who": "",
@@ -17,18 +19,9 @@ class SceneManager:
         self.current_agent_index = 0
 
     def start_scene(self, suggestion):
-        prompt = f"""Given the suggestion '{suggestion}', create an initial setup for an improv scene.
-        Return a JSON object with the following structure:
-        {{
-            "who": "Describe the relationship between characters",
-            "what": "Describe what they are doing",
-            "where": "Describe the location",
-            "problem": "Describe the problem or how to raise the stakes",
-            "character_names": ["Name for Straight Man", "Name for Fool", "Name for Smart Alec"],
-            "initial_action": "Provide the first line of dialogue or action for the first character"
-        }}
-        """
-        initial_setup = get_completion(prompt)
+        initial_setup = get_completion(lambda model: self.prompts[model]['start_scene'].format(
+            suggestion=suggestion
+        ))
 
         try:
             setup_data = json.loads(initial_setup)
@@ -60,22 +53,24 @@ class SceneManager:
         if self.is_scene_over():
             return {"scene_state": self.scene_state, "scene_over": True}
 
+        self.current_agent_index = random.randint(0, len(self.agents) - 1)
+
         current_agent = self._current_agent()
 
-        action = current_agent.ooda_loop(current_agent.character_name, self._get_scene_context())
+        action = current_agent.ooda_loop(self._get_scene_context())
 
         self.scene_state["actions"].append({
             "agent_id": self.current_agent_index,
             "agent": current_agent.character_name,
             "action": action['action']
         })
-        self.current_agent_index = (self.current_agent_index + 1) % len(self.agents)
 
         return {"scene_state": self.scene_state, "scene_over": False}
 
     def is_scene_over(self):
-        prompt = f"Given the following improv scene, determine if it has reached a satisfying conclusion or a funny crescendo. If so, respond with 'YES'. If not, respond with 'NO'.\n\nScene:\n{self._get_scene_context()}"
-        response = get_completion(prompt)
+        response = get_completion(lambda model: self.prompts[model]['is_scene_over'].format(
+            context=self._get_scene_context()
+        ))
         return response.strip().upper() == "YES"
 
     def _current_agent(self):
@@ -83,8 +78,12 @@ class SceneManager:
 
     def _load_agents_from_yaml(self):
         with open('scene/agents.yaml', 'r') as file:
-            agent_data = yaml.safe_load(file)
+            agent_data = yaml.safe_load(file)['agents']
         return [Agent(**agent_info) for agent_info in agent_data]
+
+    def _load_prompts_from_yaml(self):
+        with open('scene/scene.yaml', 'r') as file:
+            return yaml.safe_load(file)['prompts']
 
     def _get_scene_context(self):
         context = f"Suggestion: {self.scene_state['suggestion']}\n"
